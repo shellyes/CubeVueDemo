@@ -97,6 +97,7 @@ import "../../../static/lib/raphael";
 
 import { AppAccountListener } from "../../listener/AppAccountListener";
 import { AppWhiteboardListener } from "../../listener/AppWhiteboardListener";
+let appInfo = require(`${__dirname}/../../../appInfo`)
 
 export default {
   data: function() {
@@ -491,7 +492,7 @@ export default {
       })
     ) {
       console.log("引擎启动中....");
-      let appId = localStorage.getItem("appId")?localStorage.getItem("appId"):'9c2ed36ae5d34131b3768ea432da6cea005';
+      let appId = appInfo.appId;
       cube.configure({
         appid: appId,
         licenseServer: this.$store.state.licenseServer

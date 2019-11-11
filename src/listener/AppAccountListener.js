@@ -14,6 +14,9 @@ export class AppAccountListener{
     onLogined (session) {
       this.vue.$store.state.isEngineLogin = "success";
       console.log("账号登录成功回调")
+      if(this.vue.bindGroupList){
+        this.vue.querybindGroup()
+      }
     }
 
     /**

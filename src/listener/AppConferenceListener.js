@@ -17,7 +17,7 @@ export class AppConferenceListener {
    * @param {Conference} conference
    * @param {CubeError} error
    */
-  onConferenceFailed(conference, error) {
+  onConferenceFailed(error, conference) {
     console.log("会议发生错误", conference, error);
 
     let typeName = '会议';
@@ -61,23 +61,30 @@ export class AppConferenceListener {
       operate: "error",
       code:error.code
     };//会议已结束，服务器状态未改
-    this.vue.$store.commit("updateConferenceState",param);
-    this.vue.$router.push({
-      path: "/home"
-    });
+    
     if ('1505' == error.code) {
       return;
     }
   }
-
   /**
-   * 当创建会议成功时回调
+     * 当自己所在的会议被取消时发生。
+     *
+     * @param {Conference} conference - 会议对象实例
+     */
+    onConferenceClosed(conference) {
+      console.log(conference, 'onConferenceClosed监听');
+      this.vue.localStreams = [];
+        this.vue.remoteStreams = [];
+  }
+  /**
+   * 当有会议申请成功时且自己是其中成员时发生。
    *
    * @param {Conference} conference
    * @param {CubeUser} from
    */
-  onConferenceCreated(conference, from) {
+  onConferenceApplied(conference, from) {
     console.log('当创建会议成功时回调', conference, from);
+    this.vue.conferenceList.push(conference)
   }
 
   /**
@@ -139,7 +146,8 @@ export class AppConferenceListener {
    * @param {Array<CuberUser>} inviters
    */
   onConferenceInvited(conference, from, inviters) {
-
+    console.log(conference, from, inviters)
+    this.vue.conferenceList.push(conference)
   }
 
   /**
@@ -213,38 +221,38 @@ export class AppConferenceListener {
     let param = null;
     let item = list[0];
     let type = "video";
-    if(item.action == "kick" && item.controlled.cubeId == this.self.cube){//被踢者是自己,则直接跳转
-      this.vue.$router.push({
-        path: "/home"
-      });
-    }else{
-      let cube = item.control.cubeId;
-      let status = conference.status;
-      for(let state in status){//判断是视频还是音频
-        if(state == cube){
-          if(!status[state].videoEnabled){
-            type = "audio"
-          }
-        }
-      }
-      let operateArr = ["kick","presenter","toClose","media","audio","video"]
-      if (operateArr.indexOf(item.action) > -1) {
-        param = {
-          operate: item.action,
-          actionId: item.control.cubeId,//管理者
-          actionedId: item.controlled.cubeId,//被踢者
-          conferenceId: conference.conferenceId,
-          members: conference.members,
-          founder:conference.founder,
-          masters:conference.masters,
-          status:conference.status,
-          type:type
-        };
-        if(param != null){
-          this.vue.$store.commit("updateConferenceState",param);
-        }
-      }
-    }
+    // if(item.action == "kick" && item.controlled.cubeId == this.self.cube){//被踢者是自己,则直接跳转
+    //   this.vue.$router.push({
+    //     path: "/home"
+    //   });
+    // }else{
+    //   let cube = item.control.cubeId;
+    //   let status = conference.status;
+    //   for(let state in status){//判断是视频还是音频
+    //     if(state == cube){
+    //       if(!status[state].videoEnabled){
+    //         type = "audio"
+    //       }
+    //     }
+    //   }
+    //   let operateArr = ["kick","presenter","toClose","media","audio","video"]
+    //   if (operateArr.indexOf(item.action) > -1) {
+    //     param = {
+    //       operate: item.action,
+    //       actionId: item.control.cubeId,//管理者
+    //       actionedId: item.controlled.cubeId,//被踢者
+    //       conferenceId: conference.conferenceId,
+    //       members: conference.members,
+    //       founder:conference.founder,
+    //       masters:conference.masters,
+    //       status:conference.status,
+    //       type:type
+    //     };
+    //     if(param != null){
+    //       this.vue.$store.commit("updateConferenceState",param);
+    //     }
+    //   }
+    // }
   }
 
   /**
@@ -255,22 +263,7 @@ export class AppConferenceListener {
    */
   onConferenceQuited(conference, quitMember) {
     console.log("会议成员退出", quitMember, conference);
-    if(this.self.cube == quitMember.cubeId){
-      this.vue.$router.push({
-        path: "/home"
-      });
-    }else{
-      let param = {
-        actionId: quitMember.cubeId,
-        operate: "quit",
-        conferenceId: conference.conferenceId,
-        members: conference.members,
-        founder:conference.founder,
-        masters:conference.masters,
-        status:conference.status
-      };
-      this.vue.$store.commit("updateConferenceState",param);
-    }
+    
   }
 
   /**
@@ -281,24 +274,33 @@ export class AppConferenceListener {
    */
   onConferenceQuitedOther(conference, quitMember) {
     console.log("有人退出了会议", quitMember, conference);
-    if(this.self.cube == quitMember.cubeId){
-      this.vue.$router.push({
-        path: "/home"
-      });
-    }else{
-      let param = {
-        actionId: quitMember.cubeId,
-        operate: "quit",
-        conferenceId: conference.conferenceId,
-        members: conference.members,
-        founder:conference.founder,
-        masters:conference.masters,
-        status:conference.status
-      };
-      this.vue.$store.commit("updateConferenceState",param);
-    }
+    
   }
-
+  /**
+   * 被邀请入会回调
+   * @param {Conference} conference 会议对象实例
+   * @param {String} fromCubeId 邀请人 Cube 号
+   */
+  onConferenceInvite(conference, fromCubeId) {
+    console.log(conference,fromCubeId);
+    this.vue.conferenceList.push(conference)
+   }
+  /**
+   * 邀请入会(仅自己终端)
+   *
+   * @param {Conference} conference - 会议对象实例
+   * @param {Array} success - 被成功邀请集合。
+   * @param {Array} failure - 邀请失败的集合（失败原因可能人数超限制，可能被邀请者不在线直接失败）。
+   */
+  onConferenceInviteResponded(conference, success ,failure){
+    console.log(conference, success ,failure);
+    if(success){
+      this.vue.$message.info("邀请成功")
+    }else{
+      this.$message.error("邀请失败")
+    }
+    
+  }
   /**
    * 加入会议
    *
@@ -308,17 +310,12 @@ export class AppConferenceListener {
   onConferenceJoined(conference, from) {//仅仅是与引擎联通，还未真正加入会议
     this.self = JSON.parse(localStorage.getItem("User"));
     console.log("仅仅是与引擎联通，还未真正加入会议", conference, from);
-    if(from.cubeId == this.self.cube){
-      window.cube.getUtils().hasMedia().then(([video,audio])=>{//视频设备
-        if(video){
-          window.cube.getConferenceService().setVideoEnabled(conference.conferenceId);//视频
-        }else{
-          window.cube.getConferenceService().setAudioEnabled(conference.conferenceId);//音频
-        }
-      });
-    }
+    this.vue.confrenceType=conference.type
+    
   }
-
+  onConferenceAddFrame(conference){
+    
+  }
   /**
    * 同账号在其他设备加入会议sss
    *
@@ -335,12 +332,9 @@ export class AppConferenceListener {
    */
   onConferenceConnected(conference) {//这里是自己真正的进入会议
     console.log("当自己加入会议", conference);
-    let param = {
-      conferenceId: conference.conferenceId,
-      members: conference.members,
-      founder:conference.founder,
-      masters:conference.masters,
-      status:conference.status
+    if(!conference.type.includes("sfu")){
+      document.getElementById("c_local_video").srcObject = cube.sipService.localStream;
+      document.getElementById("c_remote_video").srcObject = cube.sipService.remoteStream
     }
   }
 
@@ -351,42 +345,20 @@ export class AppConferenceListener {
    * @param {stream} stream - 音视频流对象。
    */
   onConferenceAddStream(conference, stream) {
-    console.log("流接通时",conference,stream,stream.getAttributes());
-    let info = stream.getAttributes().header;
-    let cube = (stream.getAttributes() && (stream.getAttributes().cubeId || stream.getAttributes().cube)) || stream.getID();
-    let status = conference.status;
-    let self = JSON.parse(localStorage.getItem("User"));
-    let type = "video";
-    if(self.cube == cube){
-      if(!stream.video){
-        type = "audio"
-      }
-    }else{
-      for(let state in status){//判断是视频还是音频
-        if(state == cube){
-          if(!status[state].videoEnabled){
-            type = "audio"
-          }
+    console.log("流接通时",conference);
+    if(stream){
+      if(stream.local){
+        if(this.vue.localStreams){
+          this.vue.updateStreams(stream);
+        }
+      }else{
+        if(this.vue.remoteStreams){
+          this.vue.updateStreams(stream)
         }
       }
     }
-
-    let streamID = stream.getID().toString();
-    let param = {
-      conferenceId: conference.conferenceId,
-      actionId: cube,
-      members: conference.members,
-      founder:conference.founder,
-      masters:conference.masters,
-      status:conference.status,
-      operate: "join",
-      streamID:streamID,
-      nickname:info &&  info.nickname || '',
-      type:type
-    }
-    this.vue.$store.dispatch('updateConferenceStateFn',param).then(()=>{
-        stream.show(streamID, {bar: false});
-    })
+    
+   
   }
 
 
@@ -399,21 +371,11 @@ export class AppConferenceListener {
   onConferenceRemoveStream(conference, stream) {
     let cube = (stream.getAttributes() && stream.getAttributes().cube || stream.getAttributes().cubeId) || stream.getID();
     console.log(conference,stream,"当自己所在的会议视频流移除时",cube);
-    if(cube == this.self.cube){
-      this.vue.$router.push({
-        path: "/home"
-      });
+    if(stream.local){
+      this.vue.localStreams = [];
+      this.vue.remoteStreams = [];
     }else{
-      let param = {
-        actionId: cube,
-        operate: "quit",
-        conferenceId: conference.conferenceId,
-        members: conference.members,
-        founder:conference.founder,
-        masters:conference.masters,
-        status:conference.status
-      };
-      this.vue.$store.commit("updateConferenceState",param);
+      this.vue.updateStreams(stream)
     }
   }
 
@@ -437,3 +399,197 @@ export class AppConferenceListener {
   }
 }
 ;
+window.getScreenId = function(callback, custom_parameter) {
+  if(navigator.userAgent.indexOf('Edge') !== -1 && (!!navigator.msSaveOrOpenBlob || !!navigator.msSaveBlob)) {
+      // microsoft edge => navigator.getDisplayMedia(screen_constraints).then(onSuccess, onFailure);
+      callback({
+          video: true
+      });
+      return;
+  }
+
+  // for Firefox:
+  // sourceId == 'firefox'
+  // screen_constraints = {...}
+  if (!!navigator.mozGetUserMedia) {
+      callback(null, 'firefox', {
+          video: {
+              mozMediaSource: 'window',
+              mediaSource: 'window'
+          }
+      });
+      return;
+  }
+
+  window.addEventListener('message', onIFrameCallback);
+
+  function onIFrameCallback(event) {
+      if (!event.data) return;
+
+      if (event.data.chromeMediaSourceId) {
+          if (event.data.chromeMediaSourceId === 'PermissionDeniedError') {
+              callback('permission-denied');
+          } else {
+              callback(null, event.data.chromeMediaSourceId, getScreenConstraints(null, event.data.chromeMediaSourceId, event.data.canRequestAudioTrack));
+          }
+
+          // this event listener is no more needed
+          window.removeEventListener('message', onIFrameCallback);
+      }
+
+      if (event.data.chromeExtensionStatus) {
+          callback(event.data.chromeExtensionStatus, null, getScreenConstraints(event.data.chromeExtensionStatus));
+
+          // this event listener is no more needed
+          window.removeEventListener('message', onIFrameCallback);
+      }
+  }
+
+  if(!custom_parameter) {
+      setTimeout(postGetSourceIdMessage, 100);
+  }
+  else {
+      setTimeout(function() {
+          postGetSourceIdMessage(custom_parameter);
+      }, 100);
+  }
+};
+
+function getScreenConstraints(error, sourceId, canRequestAudioTrack) {
+  var screen_constraints = {
+      audio: false,
+      video: {
+          mandatory: {
+              chromeMediaSource: error ? 'screen' : 'desktop',
+              maxWidth: window.screen.width > 1920 ? window.screen.width : 1920,
+              maxHeight: window.screen.height > 1080 ? window.screen.height : 1080
+          },
+          optional: []
+      }
+  };
+
+  if(!!canRequestAudioTrack) {
+      screen_constraints.audio = {
+          mandatory: {
+              chromeMediaSource: error ? 'screen' : 'desktop',
+              // echoCancellation: true
+          },
+          optional: []
+      };
+  }
+
+  if (sourceId) {
+      screen_constraints.video.mandatory.chromeMediaSourceId = sourceId;
+
+      if(screen_constraints.audio && screen_constraints.audio.mandatory) {
+          screen_constraints.audio.mandatory.chromeMediaSourceId = sourceId;
+      }
+  }
+
+  return screen_constraints;
+}
+
+function postGetSourceIdMessage(custom_parameter) {
+  if (!iframe) {
+      loadIFrame(function() {
+          postGetSourceIdMessage(custom_parameter);
+      });
+      return;
+  }
+
+  if (!iframe.isLoaded) {
+      setTimeout(function() {
+          postGetSourceIdMessage(custom_parameter);
+      }, 100);
+      return;
+  }
+
+  if(!custom_parameter) {
+      iframe.contentWindow.postMessage({
+          captureSourceId: true
+      }, '*');
+  }
+  else if(!!custom_parameter.forEach) {
+      iframe.contentWindow.postMessage({
+          captureCustomSourceId: custom_parameter
+      }, '*');
+  }
+  else {
+      iframe.contentWindow.postMessage({
+          captureSourceIdWithAudio: true
+      }, '*');
+  }
+}
+
+var iframe;
+
+// this function is used in RTCMultiConnection v3
+window.getScreenConstraints = function(callback) {
+  loadIFrame(function() {
+      getScreenId(function(error, sourceId, screen_constraints) {
+          if(!screen_constraints) {
+              screen_constraints = {
+                  video: true
+              };
+          }
+
+          callback(error, screen_constraints.video);
+      });
+  });
+};
+
+function loadIFrame(loadCallback) {
+  if (iframe) {
+      loadCallback();
+      return;
+  }
+
+  iframe = document.createElement('iframe');
+  iframe.onload = function() {
+      iframe.isLoaded = true;
+
+      loadCallback();
+  };
+  iframe.src = 'https://www.webrtc-experiment.com/getSourceId/'; // https://wwww.yourdomain.com/getScreenId.html
+  iframe.style.display = 'none';
+  (document.body || document.documentElement).appendChild(iframe);
+}
+
+window.getChromeExtensionStatus = function(callback) {
+  // for Firefox:
+  if (!!navigator.mozGetUserMedia) {
+      callback('installed-enabled');
+      return;
+  }
+
+  window.addEventListener('message', onIFrameCallback);
+
+  function onIFrameCallback(event) {
+      if (!event.data) return;
+
+      if (event.data.chromeExtensionStatus) {
+          callback(event.data.chromeExtensionStatus);
+
+          // this event listener is no more needed
+          window.removeEventListener('message', onIFrameCallback);
+      }
+  }
+
+  setTimeout(postGetChromeExtensionStatusMessage, 100);
+};
+
+function postGetChromeExtensionStatusMessage() {
+  if (!iframe) {
+      loadIFrame(postGetChromeExtensionStatusMessage);
+      return;
+  }
+
+  if (!iframe.isLoaded) {
+      setTimeout(postGetChromeExtensionStatusMessage, 100);
+      return;
+  }
+
+  iframe.contentWindow.postMessage({
+      getChromeExtensionStatus: true
+  }, '*');
+}

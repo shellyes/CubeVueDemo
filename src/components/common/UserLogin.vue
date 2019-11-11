@@ -26,12 +26,13 @@
 </template>
 
 <script>
+let appInfo = require(`${__dirname}/../../../appInfo`)
 export default {
   data() {
     return {
       accountInfo: [],
-      appKey: localStorage.getItem("appKey")?localStorage.getItem("appKey"):'5df6d5495fb74b35ad157c94977527ff005',
-      appId: localStorage.getItem("appId")?localStorage.getItem("appId"):'9c2ed36ae5d34131b3768ea432da6cea005',
+      appKey: appInfo.appKey,
+      appId: appInfo.appId,
       cubeId: "",
       cubeToken: "",
       centerDialogVisible: false,

@@ -37,6 +37,7 @@ import { CubeFileStatusListener } from "../../listener/CubeFileStatusListener";
 import { AppAccountListener } from "../../listener/AppAccountListener";
 import { AppMessageListener } from "../../listener/AppMessageListener";
 import { AppFileManagerListener } from "../../listener/AppFileManagerListener";
+let appInfo = require(`${__dirname}/../../../appInfo`)
 
 var CubeFileInfo = CubeFile.Info,
     CubeImageMessage=CubeMessage.Entity.Image;
@@ -116,7 +117,7 @@ if (
       })
     ) {
       console.log("引擎启动中....");
-        let appId = localStorage.getItem("appId")?localStorage.getItem("appId"):'9c2ed36ae5d34131b3768ea432da6cea005'
+        let appId = appInfo.appId
       cube.configure({
         appid: appId,
         licenseServer: this.$store.state.licenseServer

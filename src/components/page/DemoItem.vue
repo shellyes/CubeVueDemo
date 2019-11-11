@@ -17,7 +17,7 @@
       <el-button class="demoitem" type="primary" @click="goToDemo('file')">文件管理Demo</el-button>
     </div>
     <div>
-      <!-- <el-button class="demoitem" type="primary" @click="goToDemo('confrence')">会议Demo</el-button> -->
+      <el-button class="demoitem" type="primary" @click="goToDemo('confrence')">音视频会议Demo</el-button>
     </div>
   </div>
 </template>

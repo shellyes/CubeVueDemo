@@ -14,7 +14,7 @@ const state = {
   loginServer:'https://test-user.shixincube.cn/',
   messageList:[],
   groupList:[],
-  licenseServer: 'https://test-license.shixincube.cn/auth/license/get',
+  licenseServer:'http://103.6.222.234:9000/auth/license/get',
   videoCall:false,
   videoInfo:{},
   whiteBoarList:[],

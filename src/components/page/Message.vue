@@ -79,6 +79,8 @@ import * as CubeFile from "../../../static/lib/CubeFile";
 import * as CubeMessage from "../../../static/lib/CubeMessage";
 
 import { CubeFileStatusListener } from "../../listener/CubeFileStatusListener";
+let appInfo = require(`${__dirname}/../../../appInfo`)
+
 var CubeFileInfo = CubeFile.Info,
     CubeImageMessage=CubeMessage.Entity.Image;
 export default {
@@ -200,7 +202,7 @@ export default {
       })
     ) {
       console.log("引擎启动中....");
-        let appId = localStorage.getItem("appId")?localStorage.getItem("appId"):'9c2ed36ae5d34131b3768ea432da6cea005'
+        let appId = appInfo.appId
       cube.configure({
         appid: appId,
         licenseServer: this.$store.state.licenseServer

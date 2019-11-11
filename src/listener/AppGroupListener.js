@@ -17,7 +17,8 @@ export class AppGroupListener{
         var param = {
             founder:groupContext.data.founder,
             displayName:groupContext.data.displayName,
-            name:groupContext.data.name
+            name:groupContext.data.name,
+            members:groupContext.data.members
           }
               this.vue.$store.state.groupList.push(param);
      }
@@ -46,7 +47,12 @@ export class AppGroupListener{
      */
     onMemberAdded(groupContext, members, addedMembers) { 
         console.log('当自己所在的群组有新增成员时被调用。',groupContext, members, addedMembers)
-
+        var groupList = this.vue.$store.state.groupList;
+        for(var i=0; i< groupList.length;i++){
+            if(groupList[i].name == groupContext.data.name){
+                groupList[i].members = members;
+            }
+        }
     }
 
     /**
@@ -58,7 +64,15 @@ export class AppGroupListener{
      */
     onMemberRemoved(groupContext, members, removedMembers) {
         console.log('当自己所在的群组被删除时被调用。',groupContext, members, removedMembers)
-        
+        var groupList = this.vue.$store.state.groupList;
+        for(var i=0; i< groupList.length;i++){
+            if(groupList[i].name == groupContext.data.name){
+                groupList[i].members = members;
+                if(removedMembers.indexOf(groupList[i].founder)>-1){
+                    groupList.splice(i,1)
+                }
+            }
+        }
      }
 
     /**

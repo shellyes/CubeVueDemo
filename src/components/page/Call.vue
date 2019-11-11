@@ -165,13 +165,13 @@ import * as CubeSignaling from "../../../static/lib/CubeSignaling";
 import { AppAccountListener } from "../../listener/AppAccountListener";
 import { AppCallListener } from "../../listener/AppCallListener";
 import { MediaProbe } from "../../listener/MediaProbe";
-
+let appInfo = require(`${__dirname}/../../../appInfo`)
 export default {
   data: function() {
     return {
       accountInfo: [],
-      appKey: localStorage.getItem("appKey"),
-      appId: localStorage.getItem("appId"),
+      appKey: appInfo.appKey,
+      appId: appInfo.appId,
       cubeId: "",
       cubeToken: "",
       centerDialogVisible: false,
@@ -457,7 +457,7 @@ export default {
         })
       ) {
         console.log("引擎启动中....");
-        let appId = localStorage.getItem("appId")?localStorage.getItem("appId"):'9c2ed36ae5d34131b3768ea432da6cea005';
+        let appId = appInfo.appId;
         cube.configure({
           appid: appId,
           licenseServer: this.$store.state.licenseServer
